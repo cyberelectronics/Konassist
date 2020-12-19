@@ -265,6 +265,8 @@ char mqtt_port[6] = "8080";
 char blynk_token[40] = "";             // Config from WebUI; Here Leave it empty - OBD device token 
 //char blynk_home_token[40] = "";        // Config from WebUI; Here leave it empty - Home device blynk token
 //char blynk_carassist_token[40] = "";   // Config from WebUI; Here leave it empty - Car Assistant blynk token
+char bluetooth_device_name[40] = "";        // Config from WebUI; Here leave it empty - Bluetooth Device Name
+char bluetooth_PIN[6] = "";        // Config from WebUI; Here leave it empty - Bluetooth PIN
 
 //flag for saving data
 bool shouldSaveConfig = false;
@@ -558,6 +560,8 @@ void setup() {
                                                                                                                  strcpy(blynk_token, jsonBuffer["blynk_token"]);
                                                                                                                  //strcpy(blynk_carassist_token, jsonBuffer["blynk_carassist_token"]);
                                                                                                                  //strcpy(blynk_home_token, jsonBuffer["blynk_home_token"]);
+                                                                                                                 strcpy(bluetooth_device_name, jsonBuffer["bluetooth_device_name"]);
+                                                                                                                 strcpy(bluetooth_PIN, jsonBuffer["bluetooth_PIN"]);
                                                                                                                 } 
                                                                                                     else {
                                                                                                            DEBUG_PORT.println("failed to load json config");
@@ -590,6 +594,8 @@ void setup() {
                    WiFiManagerParameter custom_blynk_token("blynk", "Car Blynk Token", blynk_token, 33);
                    //WiFiManagerParameter custom_blynk_carassist_token("blynk1", "Car TTS Blynk Token", blynk_carassist_token, 33); 
                    //WiFiManagerParameter custom_blynk_home_token("blynk2", "Home Blynk Token", blynk_home_token, 33);
+                   WiFiManagerParameter custom_bluetooth_device_name("bt_name", "Bluetooth Device Name", bluetooth_device_name, 33);
+                   WiFiManagerParameter custom_bluetooth_PIN("bt_PIN", "Bluetooth PIN", bluetooth_PIN, 6);
               
                 WiFiManager wifiManager;
                 //set config save notify callback
@@ -604,6 +610,8 @@ void setup() {
                   wifiManager.addParameter(&custom_blynk_token);
                   //wifiManager.addParameter(&custom_blynk_carassist_token);
                   //wifiManager.addParameter(&custom_blynk_home_token);
+                  wifiManager.addParameter(&custom_bluetooth_device_name);
+                  wifiManager.addParameter(&custom_bluetooth_PIN);
 
 
               //reset settings - for testing
@@ -650,6 +658,8 @@ void setup() {
               strcpy(blynk_token, custom_blynk_token.getValue());
               //strcpy(blynk_carassist_token, custom_blynk_carassist_token.getValue());
               //strcpy(blynk_home_token, custom_blynk_home_token.getValue());
+              strcpy(bluetooth_device_name, custom_bluetooth_device_name.getValue());
+              strcpy(bluetooth_PIN, custom_bluetooth_PIN.getValue());
               
               //save the custom parameters to FS
               if (shouldSaveConfig) {
@@ -661,6 +671,8 @@ void setup() {
                                       jsonBuffer["blynk_token"] = blynk_token;
                                      // jsonBuffer["blynk_carassist_token"] = blynk_carassist_token;
                                      // jsonBuffer["blynk_home_token"] = blynk_home_token;
+                                     jsonBuffer["bluetooth_device_name"] = bluetooth_device_name;
+                                     jsonBuffer["bluetooth_PIN"] = bluetooth_PIN;
                                       
                                   
                                       File configFile = SPIFFS.open("/config.json", "w");
@@ -684,10 +696,12 @@ void setup() {
 
             //---------------------------- Connect BT
              
-              ELM_PORT.setPin("1234");         // PIN for iCar Vgate pro BT4.0 OBD adapter 
+              //ELM_PORT.setPin("1234");         // PIN for iCar Vgate pro BT4.0 OBD adapter 
+              ELM_PORT.setPin(bluetooth_PIN);         // PIN for iCar Vgate pro BT4.0 OBD adapter 
               ELM_PORT.begin("Boost", true);
               
-              if (!ELM_PORT.connect("Android-Vlink"))   // Device name of iCar Vgate pro BT4.0 OBD adapter 
+              //if (!ELM_PORT.connect("Android-Vlink"))   // Device name of iCar Vgate pro BT4.0 OBD adapter 
+              if (!ELM_PORT.connect(bluetooth_device_name))   // Device name of iCar Vgate pro BT4.0 OBD adapter 
               {
                 DEBUG_PORT.println("Couldn't connect to OBD scanner - Phase 1");
                 while(1);
