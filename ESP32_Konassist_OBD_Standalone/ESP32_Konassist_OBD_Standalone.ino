@@ -1,5 +1,5 @@
 /*  Konassist for Hyundai Kona EV + OBD Vgate iCar Pro BT4.0 
- *  Version: v1.0
+ *  Version: v1.1
   *   
   * by CyberElectronics --> 
   * Thanks guys for all support and libs available for free on the net
@@ -217,8 +217,8 @@ byte  MINcellvno; // Minimum Cell Voltage Number
 byte BMSrelay;      // BMS relay
 byte CHARGE;       // ACDC charging signal
 byte BATTFANspeed; // FAN Speed
-byte COOLtemp;    // Cooling water temperature
-byte HEATtemp1, HEATtemp2; // Heater temperatures
+int COOLtemp;    // Cooling water temperature
+int HEATtemp1, HEATtemp2; // Heater temperatures
 float TRIP1ch;    // Trip 1 charged kWh
 float TRIP1dch;   // Trip 1 discharged kWh
 float tempBATTpow; // temporary
@@ -237,8 +237,8 @@ int SOCreal;       // State Of Charge in percent
 int SOHpercent;   // State Of Health in percent
 float BATTv;        // Main Battery Voltage
 float BATTcur;      // Main Battery Current
-byte BATTtemp1, BATTtemp2, BATTtemp3, BATTtemp4;  // Main Battery temperature per module
-byte BATTMAXtemp, BATTMINtemp;                    // Main Battery MAX and MIN temperature 
+int BATTtemp1, BATTtemp2, BATTtemp3, BATTtemp4;  // Main Battery temperature per module
+int BATTMAXtemp, BATTMINtemp;                    // Main Battery MAX and MIN temperature 
 int RLTtemp, RRTtemp, FLTtemp, FRTtemp;          // Tyre temperature 
 int TRIP1odo;    // Trip1 distance
 byte CURbyte1, CURbyte2;   // main batt. current debug
@@ -265,8 +265,8 @@ char mqtt_port[6] = "8080";
 char blynk_token[40] = "";             // Config from WebUI; Here Leave it empty - OBD device token 
 //char blynk_home_token[40] = "";        // Config from WebUI; Here leave it empty - Home device blynk token
 //char blynk_carassist_token[40] = "";   // Config from WebUI; Here leave it empty - Car Assistant blynk token
-char bluetooth_device_name[40] = "";        // Config from WebUI; Here leave it empty - Bluetooth Device Name
-char bluetooth_PIN[6] = "";        // Config from WebUI; Here leave it empty - Bluetooth PIN
+char bluetooth_device_name[40] = "Android-Vlink";        // Config from WebUI; Here leave it empty - Bluetooth Device Name
+char bluetooth_PIN[6] = "1234";        // Config from WebUI; Here leave it empty - Bluetooth PIN
 
 //flag for saving data
 bool shouldSaveConfig = false;
@@ -560,8 +560,8 @@ void setup() {
                                                                                                                  strcpy(blynk_token, jsonBuffer["blynk_token"]);
                                                                                                                  //strcpy(blynk_carassist_token, jsonBuffer["blynk_carassist_token"]);
                                                                                                                  //strcpy(blynk_home_token, jsonBuffer["blynk_home_token"]);
-                                                                                                                 strcpy(bluetooth_device_name, jsonBuffer["bluetooth_device_name"]);
-                                                                                                                 strcpy(bluetooth_PIN, jsonBuffer["bluetooth_PIN"]);
+                                                                                                                 //strcpy(bluetooth_device_name, jsonBuffer["bluetooth_device_name"]);
+                                                                                                                 //strcpy(bluetooth_PIN, jsonBuffer["bluetooth_PIN"]);
                                                                                                                 } 
                                                                                                     else {
                                                                                                            DEBUG_PORT.println("failed to load json config");
@@ -612,8 +612,42 @@ void setup() {
                   //wifiManager.addParameter(&custom_blynk_home_token);
                   wifiManager.addParameter(&custom_bluetooth_device_name);
                   wifiManager.addParameter(&custom_bluetooth_PIN);
-
-
+///////////////////////
+              //read updated parameters
+             /// strcpy(mqtt_server, custom_mqtt_server.getValue());
+             /// strcpy(mqtt_port, custom_mqtt_port.getValue());
+              strcpy(blynk_token, custom_blynk_token.getValue());
+              //strcpy(blynk_carassist_token, custom_blynk_carassist_token.getValue());
+              //strcpy(blynk_home_token, custom_blynk_home_token.getValue());
+              strcpy(bluetooth_device_name, custom_bluetooth_device_name.getValue());
+              strcpy(bluetooth_PIN, custom_bluetooth_PIN.getValue());
+              
+              //save the custom parameters to FS
+              if (shouldSaveConfig) {
+                                      Serial.println("saving config");
+                                      DynamicJsonDocument jsonBuffer(1024);
+                                      
+                                     /// jsonBuffer["mqtt_server"] = mqtt_server;
+                                     /// jsonBuffer["mqtt_port"] = mqtt_port;
+                                      jsonBuffer["blynk_token"] = blynk_token;
+                                     // jsonBuffer["blynk_carassist_token"] = blynk_carassist_token;
+                                     // jsonBuffer["blynk_home_token"] = blynk_home_token;
+                                     jsonBuffer["bluetooth_device_name"] = bluetooth_device_name;
+                                     jsonBuffer["bluetooth_PIN"] = bluetooth_PIN;
+                                      
+                                  
+                                      File configFile = SPIFFS.open("/config.json", "w");
+                                      if (!configFile) {
+                                                          Serial.println("failed to open config file for writing");
+                                                        }
+                                  
+                                      //serializeJson(jsonBuffer, Serial);
+                                      serializeJson(jsonBuffer, configFile);
+                                      
+                                      configFile.close();
+                                      //end save
+                                    }
+////////////////////////
               //reset settings - for testing
               //wifiManager.resetSettings();
             
@@ -652,40 +686,7 @@ void setup() {
               //if you get here you have connected to the WiFi
               DEBUG_PORT.println("connected...yeey :)");
             
-              //read updated parameters
-             /// strcpy(mqtt_server, custom_mqtt_server.getValue());
-             /// strcpy(mqtt_port, custom_mqtt_port.getValue());
-              strcpy(blynk_token, custom_blynk_token.getValue());
-              //strcpy(blynk_carassist_token, custom_blynk_carassist_token.getValue());
-              //strcpy(blynk_home_token, custom_blynk_home_token.getValue());
-              strcpy(bluetooth_device_name, custom_bluetooth_device_name.getValue());
-              strcpy(bluetooth_PIN, custom_bluetooth_PIN.getValue());
-              
-              //save the custom parameters to FS
-              if (shouldSaveConfig) {
-                                      Serial.println("saving config");
-                                      DynamicJsonDocument jsonBuffer(1024);
-                                      
-                                     /// jsonBuffer["mqtt_server"] = mqtt_server;
-                                     /// jsonBuffer["mqtt_port"] = mqtt_port;
-                                      jsonBuffer["blynk_token"] = blynk_token;
-                                     // jsonBuffer["blynk_carassist_token"] = blynk_carassist_token;
-                                     // jsonBuffer["blynk_home_token"] = blynk_home_token;
-                                     jsonBuffer["bluetooth_device_name"] = bluetooth_device_name;
-                                     jsonBuffer["bluetooth_PIN"] = bluetooth_PIN;
-                                      
-                                  
-                                      File configFile = SPIFFS.open("/config.json", "w");
-                                      if (!configFile) {
-                                                          Serial.println("failed to open config file for writing");
-                                                        }
-                                  
-                                      //serializeJson(jsonBuffer, Serial);
-                                      serializeJson(jsonBuffer, configFile);
-                                      
-                                      configFile.close();
-                                      //end save
-                                    }
+//////////////////////////
             
               DEBUG_PORT.println("local ip");
               DEBUG_PORT.println(WiFi.localIP());
@@ -872,12 +873,15 @@ void read_data(){
                                                                                                            
                                                                                                            BATTv = ((convertToInt(dataFrame2, 4, 5)<<8) + convertToInt(dataFrame2, 6, 7))/10.0;  
                                                                                                            BATTMAXtemp = convertToInt(dataFrame2, 8, 9);
+                                                                                                           if(BATTMAXtemp > 200) BATTMAXtemp -= 255;
                                                                                                            BATTMINtemp = convertToInt(dataFrame2, 10, 11);
+                                                                                                           if(BATTMINtemp > 200) BATTMINtemp -= 255;
                                                                                                            BATTtemp1 = convertToInt(dataFrame2, 12, 13);
                                                                                                            BATTtemp2 = convertToInt(dataFrame3, 0, 1);
                                                                                                            BATTtemp3 = convertToInt(dataFrame3, 2, 3);
                                                                                                            BATTtemp4 = convertToInt(dataFrame3, 4, 5);
                                                                                                            BATTINtemp = convertToInt(dataFrame3, 10, 11);
+                                                                                                           if (BATTINtemp > 200) BATTINtemp -= 255;
                                                                                                            MAXcellv = convertToInt(dataFrame3, 12, 13)/50.0;
                                                                                                            MAXcellvno = convertToInt(dataFrame4, 0, 1);
                                                                                                            MINcellv = convertToInt(dataFrame4, 2, 3)/50.0;
@@ -890,8 +894,14 @@ void read_data(){
                                                                                                            CEDvalue = ((convertToInt(dataFrame6, 8, 9)<<24) + (convertToInt(dataFrame6, 10, 11)<<16) + (convertToInt(dataFrame6, 12, 13)<<8) + convertToInt(dataFrame7, 0, 1))/10.0;
                                                                                                            OPtimehours = ((convertToInt(dataFrame7, 2, 3)<<24) + (convertToInt(dataFrame7, 4, 5)<<16) + (convertToInt(dataFrame7, 6, 7)<<8) + convertToInt(dataFrame7, 8, 9))/3600;
                                                                                                           
-                                                                                                           BATTpow = (BATTv * BATTcur)/1000.0;                                 // Energy Draw/Charge (kW)
+                                                                                                           BATTpow = (BATTv * BATTcur)/1000.0;    // Energy Draw/Charge (kW)
+                                                                                                                                                                                                                      
+                                                                                                           if (BATTtemp1 > 200) BATTtemp1 -= 255; // negativ temperature
+                                                                                                           if (BATTtemp2 > 200) BATTtemp2 -= 255;
+                                                                                                           if (BATTtemp3 > 200) BATTtemp3 -= 255;
+                                                                                                           if (BATTtemp4 > 200) BATTtemp4 -= 255;
                                                                                                            BATTtemp =  (BATTtemp1 + BATTtemp2 + BATTtemp3 + BATTtemp4)/4.0;  // Average BATT temp.
+                                                                                                           
                                                                                                            
                                                                                                            if(!CECvalue){  // until IGNition/BMS relay is OFF the CEC and CED values are 0
                                                                                                                            TRIP1ch = 0;
@@ -955,7 +965,9 @@ void read_data(){
 
                                                                                             VOLTdiff = convertToInt(dataFrame3, 6, 7)/50;  // Voltage difference
                                                                                             HEATtemp1 = convertToInt(dataFrame3, 12, 13);  // Heater 1 temperature
+                                                                                            if(HEATtemp1 > 200) HEATtemp1 -= 255;
                                                                                             //HEATtemp2 = convertToInt(dataFrame4, 0, 1);    // Heater 2 temperature
+                                                                                            //if(HEATtemp2 > 200) HEATtemp2 -= 255;
                                                                                             SOHpercent = ((convertToInt(dataFrame4, 2, 3)<<8) + convertToInt(dataFrame4, 4, 5)) / 10; // State Of Health %
                                                                                             SOCpercent = convertToInt(dataFrame5, 0, 1)/2;  // State Of Charge Displayed
                                                                                             
@@ -988,6 +1000,7 @@ void read_data(){
                                                                                             read_rawdata();
                                                                                            
                                                                                             COOLtemp = convertToInt(dataFrame1, 2, 3);  // Cooling water temperature
+                                                                                            if(COOLtemp > 200) COOLtemp -= 255;
                                                                                             
                                                                                             DEBUG_PRINTLN(COOLtemp);
                                                                                             DEBUG_PRINTLN("");
